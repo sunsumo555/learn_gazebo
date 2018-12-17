@@ -1,0 +1,162 @@
+GET STARTED
+
+1.) Quick start
+
+run gazebo by typing 
+> gazebo
+
+1st task, run a stupid world, type this
+> gazebo worlds/pioneer2dx.world
+
+.world files are stored at /usr/share/gazebo-7
+(or maybe gazebo-your_version)
+
+gazebo = gzserver + gzclient
+gzserver = physics + sensor generation (the core, basically)
+gzclient = fancy graphics + gui
+"headless" = running only the server
+
+you can try
+> gzserver
+> gzclient
+
+-------------------------------------------
+
+2.) Gazebo components
+
+6 components
+
+1. World Files
+ = all the things in the simulation = robot + light + sensor + objects
+- this is formatted with SDF
+- .world
+- a lot of default worlds given in <install_path>/share/gazebo-<version>/worlds
+
+2. Model Files
+ = single <model> ... </model>
+- SDF formatted
+- help model reuse
+- http://bitbucket.org/osrf/gazebo_models = shittonnes of models
+- we can insert any model from the internet, it will be downloaded at runtime
+- http://gazebosim.org/tutorials?tut=build_model = read more
+
+3. Environment Variables
+ = variable to hlep with stuffs
+- locate files
+- set up communications (server and clients)
+- normally we don't have to set it other than the default
+- There are 5 variables
+3.1. GAZEBO_MODEL_PATH = path to model files, colon separated
+3.2. GAZEBO_RESOURCE_PATH = path to other resources (world + media), colon separated
+3.3. GAZEBO_MASTER_URI = URI for Gazebo master (IP + port where the server starts + clients connect to)
+3.4. GAZEBO_PLUGIN_PATH = path to plugins and shared libraries at runtime
+3.5. GAZEBO_MODEL_DATABASE_URI = where to download external models from
+
+to modify the variables
+1. > source <install_path>/share/gazebo/setup.sh
+2. modify the variables that it sets
+
+for Gazebo 8, there are some new variables
+IGN_PARTITION: Partition name for all Ignition Transport nodes.
+IGN_IP: Similar to GAZEBO_MASTER_URI, but for Ignition Transport.
+IGN_VERBOSE: Show debug information from Ignition Transport.
+
+4. Gazebo Server
+= the fucking core of it, parses the world description to a world
+- > gzserver <world_filename>
+- The <world_filename> can be:
+    - relative to the current directory,
+    - an absolute path, or
+    - relative to a path component in GAZEBO_RESOURCE_PATH.
+    - worlds/<world_name>, where <world_name> is a world that is installed with Gazebo
+
+5. Graphical Client
+= visualization of the world
+> gzclient
+> gazebo = servevr + client in one line
+
+6. Plugins
+= to communicate with Gazebo from external programs
+- plugins can be either loaded on the command line, or specified in an SDF file
+- plugins given be the commandline are loaded first, then the ones specified in the SDF 
+- some are loaded by the server (affecting physics properties)
+- some are loaded by the graphical client (custom GUI)
+- command line loading: (-s = systems plugin)
+	- > gzserver -s <plugin_filename>
+	- the plugins will be searched from the GAZEBO_PLUGIN_PATH
+	- For example, to load the RestWebPlugin that ships with Gazebo:
+		- > gzserver --verbose -s libRestWebPlugin.so
+- command line loading (-g = affective GUI) (Gazebo 8 uses --gui-client-plugin)
+	- > gzclient --gui-client-plugin libTimerGUIPlugin.so
+- read more: http://gazebosim.org/tutorials/?tut=plugins_hello_world
+
+-----------------------------------------
+
+3.) Gazebo Architecture
+
+Gazebo = gzserver + gzclient
+
+gzserver & client talks throught gazebo communication library (Google protobuf for message serialization and boost::ASIO for the transport mechanism)
+
+supports publish / subscribe communication paradigm
+
+Systems: 7 components
+1. Gazebo Master
+= a topic name server
+- name lookup, topic management
+- single master can handle multiple 
+	- physics simulation
+	- sensor generator
+	- GUIs
+
+2. Communication Library
+- Dependencies: Protobuf and boost::ASIO
+- External API: Support communication with Gazebo nodes over named topics
+- Internal API: None
+- Advertised Topics: None
+- Subscribed Topics: None
+
+- This library is used by almost all subsequent libraries. 
+- acts as the communication and transport mechanism for Gazebo. 
+- It currently supports only publish/subscribe, 
+- possible to use RPC with minimal effort.
+
+3. Physics Library
+- Dependencies: Dynamics engine (with internal collision detection)
+- External API: Provides a simple and generic interface to physics simulation
+- Internal API: Defines a fundamental interface to the physics library for 3rd party dynamic engines.
+- generic interface for simulation components
+	- rigid body
+	- collision shapes 
+	- joints 
+- uses 4 opensource physics engines
+    - Open Dynamics Engine (ODE)
+    - Bullet
+    - Simbody
+    - Dynamic Animation and Robotics Toolkit (DART)
+- model described in the SDF using XML an be loaded by each of these guys -> access to different algo implementation + simulation features
+
+4. Rendering Library
+- Dependencies: OGRE
+- External API: Allows for loading, initialization, and scene creation
+- Internal API: Store metadata for visualization, call the OGRE API for rendering.
+- OGRE provides a simple interface for rendering 3D scenes to both the GUI and sensor libraries. 
+	- lighting
+	- textures
+	- sky simulation
+	- It is possible to write plugins for the rendering engine.
+
+5. Sensor Generation
+- Dependencies: Rendering Library, Physics Library
+- External API: Provide functionality to initialize and run a set of sensors
+- Internal API: TBD
+- The sensor generation library:
+	- implements a lot of sensors
+	- listens to world state updates from a physics simulator
+	- produces output specified by the instantiated sensors.
+
+6. Plugins
+- The physics, sensor, and rendering libraries support plugins. 
+- These plugins provide users with access to the respective libraries without using the communication system.
+
+=======================================================================

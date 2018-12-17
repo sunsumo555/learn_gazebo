@@ -1,0 +1,2285 @@
+Model structure and requirements
+
+1.) Overview
+
+- Gazebo is able to dynamically load models into simulation
+	- programmatically
+	- GUI
+
+- This tutorial describes Gazebo's model directory structure, and the necessary files within a model directory.
+
+- Models in Gazebo define a physical entity with 
+	- dynamic
+	- kinematic 
+	- visual properties
+
+- A model may have one or more plugins
+	- affect the model's behavior.
+
+- A model can represent anything from a simple shape to a complex robot; 
+- even the ground is a model. 
+
+2.) The Model Database Repository
+
+The model database is a bitbucket repository found at https://bitbucket.org/osrf/gazebo_models
+
+3.) Model Database Structure
+
+- A model database must abide by a specific directory and file structure. 
+	- The root of a model database contains one directory for each model,
+	- and a database.config file 
+		- information about the model database. 
+	- Each model directory also has a model.config file 
+		- contains meta data about the model. 
+	- A model directory also contains the SDF for the model and any materials, meshes, and plugins.
+
+3.1. Plugins Directory
+- This is an optional directory that contains all of the plugins for the model.
+
+3.2. Meshes Directory
+- This is an optional directory that contains all of the COLLADA and/or STL files for the model.
+
+3.3. Material Directory
+- This is an optional directory that contains all of the textures, images, and OGRE scripts for the model. 
+- Texture images must be placed in the textures subdirectory
+- OGRE script files in the scripts directory.
+
+3.4. Database Config
+- This is the database.config file in the root of the model database. 
+- This file contains license information for the models, a name for the database, and a list of all the valid models.
+- The format of this database.config is:
+	<?xml version='1.0'?>
+	<database>
+		<name>name_of_this_database</name>
+		<license>Creative Commons Attribution 3.0 Unported</license>
+		<models>
+			<uri>file://model_directory</uri>
+		</models>
+	</database>
+
+<name>
+The name of the database. This is used by the GUI and other tools.
+
+<license>
+The license for the models within the database. We highly recommend theCreative Commons Attribution 3.0 Unported license.
+
+<models>
+A listing of all the model URIs within the database.
+
+	<uri>
+	The URI for a model, this should be file://model_directory_name
+
+3.5. Model Config
+- Each model must have a model.config file in the model's root directory that contains meta information about the model.
+The format of this model.config is:
+
+<?xml version="1.0"?>
+
+<model>
+	<name>My Model Name</name>
+	<version>1.0</version>
+	<sdf version='1.5'>model.sdf</sdf>
+	<author>
+		<name>My name</name>
+		<email>name@email.address</email>
+	</author>
+	<description>
+		A description of the model
+	</description>
+</model>
+
+<name> required
+Name of the model.
+
+<version> required
+Version of this model.
+- Note: This is not the version of sdf that the model uses. That information is kept in the model.sdf file.
+
+<sdf> required
+The name of a SDF or URDF file that describes this model. The version attribute indicates what SDF version the file uses, and is not required for URDFs. Multiple <sdf> elements may be used in order to support multiple SDF versions.
+
+<author> required
+	<name> required
+	Name of the model author.
+
+	<email> required
+	Email address of the author.
+
+<description> required
+Description of the model should include:
+	- What the model is (e.g., robot, table, cup)
+	- What the plugins do (functionality of the model)
+
+<depend> optional
+All the dependencies for this model. This is typically other models.
+
+	<model> optional
+		<uri> required
+		URI of the model dependency.
+
+		<version> required
+		Version of the model.
+
+3.6. Model SDF
+- Each model requires a model.sdf file that contains the Simulator Description Format of the model. 
+- You can find more information on the SDF website http://sdformat.org/.
+
+3.7. Model SDF.ERB
+- Standard SDF file which can contain ruby code embedded. 
+- This option is used to programatically generate SDF files using Embedded Ruby code templates. 
+- Please note that the ruby conversion should be done manually 
+	- (erb model.sdf.erb > model.sdf) 
+	- and the final model.sdf file must be uploaded together with the model.sdf.erb (this one only for reference).
+
+- Examples of sdf.erb files are available in the gazebo_models repository (some of them use the deprecated suffix .rsdf)
+	- https://bitbucket.org/osrf/gazebo_models/src
+- An easy ERB file is the 
+	- https://bitbucket.org/osrf/gazebo/src/b54961341ffb938a9f99c9976aed50a771c95216/worlds/flocking.world.erb?at=default
+	- flocking.world.erb which uses a simple loop.
+
+----------------------------------
+
+2.) How to add models to the database (skipped)
+
+http://gazebosim.org/tutorials?tut=model_contrib&cat=build_robot
+
+--------------------------------
+
+3.) Make a model
+
+1. Overview
+- SDF Models can range from simple shapes to complex robots. 
+- It refers to the <model> SDF tag, and is essentially a collection of 
+	- links, 
+	- joints, 
+	- collision objects, 
+	- visuals, 
+	- and plugins.
+- Generating a model file can be difficult depending on the complexity of the desired model. 
+- This page will offer some tips on how to build your models.
+
+2. Components of a SDF Models
+There are 3 types of components
+
+2.1. Links: 
+- A link contains the physical properties of one body of the model. 
+- This can be a wheel, or a link in a joint chain. 
+- Each link may contain many collision and visual elements.
+-* Try to reduce the number of links in your models in order to improve performance and stability. 
+- For example, a table model could consist of 5 links (4 for the legs and 1 for the top) connected via joints. 
+- However, this is overly complex, especially since the joints will never move. Instead, create the table with 1 link and 5 collision elements.
+- components of a link:
+	2.1.1. Collision: 
+	- A collision element encapsulates a geometry that is used to collision checking. 
+	- This can be a simple shape (which is preferred), 
+	- or a triangle mesh (which consumes greater resources). 
+	-* A link may contain many collision elements.
+
+	2.1.2. Visual: 
+	- A visual element is used to visualize parts of a link. 
+	- A link may contain 0 or more visual elements.
+	- the appearance of the link
+
+	2.1.3. Inertial: 
+	- The inertial element describes the dynamic properties of the link, 
+	- such as mass and rotational inertia matrix.
+
+	2.1.4. Sensor: 
+	- A sensor collects data from the world for use in plugins. 
+	- A link may contain 0 or more sensors.
+	- so we have to have a link to attach a sensor
+
+	2.1.5. Light: 
+	- A light element describes a light source attached to a link. 
+	- A link may contain 0 or more lights.
+
+2.2. Joints: 
+- A joint connects two links. 
+- A parent and child relationship is established along with other parameters such as 
+	- axis of rotation
+	- joint limits.
+
+2.3. Plugins
+- A plugin is a shared library created by a third party to control a model.
+
+3. Building a model 101
+
+Step 1: Collect your meshes
+- This step involves gathering all the necessary 3D mesh files that are required to build your model. 
+- Gazebo provides a set of simple shapes: 
+	- box,
+	- sphere, 
+	- cylinder. 
+	- If your model needs something more complex, then continue reading.
+
+- Meshes come from a number of places. 
+- Google's 3D warehouse is a good repository of 3D models (https://3dwarehouse.sketchup.com/index.html). 
+- Alternatively, you may already have the necessary files. 
+- *** Finally, you can make your own meshes using a 3D modeler such as Blender or Sketchup. ***
+- *** Gazebo requires that mesh files be formatted as STL, Collada or OBJ, with Collada and OBJ being the preferred formats. ***
+- Blender -> collanda / obj
+- Catia -> STL
+
+Tip: Use your 3D modeling software to move each mesh so that it is 
+- centered on the origin.
+-> This will make placement of the model in Gazebo significantly easier.
+
+Tip: Collada and OBJ file formats allow you to attach materials to the meshes. 
+- Use this mechanism to improve the visual appearance of your meshes.
+
+Tip: Keep meshes simple. 
+- This is especially true if you plan on using the mesh as a collision element. 
+- A common practice is to use a low polygon mesh for a collision element, 
+- and higher polygon mesh for the visual. 
+- An even better practice is to use one of the built-in shapes (box, sphere, cylinder) as the collision element.
+
+Step 2: Make your model SDF file
+- Start by creating an extremely simple model file, or copy an existing model file. 
+- The key here is to start with something that you know works, or can debug very easily.
+
+- Here is a very rudimentary minimum box model file with 
+	- just a unit sized box shape as a collision geometry 
+	- and the same unit box visual with unit inertias:
+
+Create the box.sdf model file
+> gedit box.sdf
+
+<?xml version='1.0'?>
+<sdf version="1.4">
+	<model name="my_model">
+		<pose>0 0 0.5 0 0 0</pose>
+		<static>true</static>
+		<link name="link">
+			<inertial>
+				<mass>1.0</mass>
+				<inertia> <!-- inertias are tricky to compute -->
+					<!-- http://gazebosim.org/tutorials?tut=inertia&cat=build_robot -->
+					<ixx>0.083</ixx>       <!-- for a box: ixx = 0.083 * mass * (y*y + z*z) -->
+					<ixy>0.0</ixy>         <!-- for a box: ixy = 0 -->
+					<ixz>0.0</ixz>         <!-- for a box: ixz = 0 -->
+					<iyy>0.083</iyy>       <!-- for a box: iyy = 0.083 * mass * (x*x + z*z) -->
+					<iyz>0.0</iyz>         <!-- for a box: iyz = 0 -->
+					<izz>0.083</izz>       <!-- for a box: izz = 0.083 * mass * (x*x + y*y) -->
+				</inertia>
+			</inertial>
+			<collision name="collision">
+				<geometry>
+					<box>
+						<size>1 1 1</size>
+					</box>
+				</geometry>
+			</collision>
+			<visual name="visual">
+				<geometry>
+					<box>
+						<size>1 1 1</size>
+					</box>
+				</geometry>
+			</visual>
+		</link>
+	</model>
+</sdf>
+
+- Note that the origin of the Box-geometry is at the geometric center of the box, 
+- so in order to have the bottom of the box flush with the ground plane, 
+	- an origin of <pose>0 0 0.5 0 0 0</pose> is added to raise the box above the ground plane.
+
+Step 3: Add to the model SDF file
+- With a working .sdf file, 
+- slowly start adding in more complexity. 
+- With each new addition, 
+	- load the model using the graphical client to make sure your model is correct.
+
+Here is a good order in which to add features:
+	Add a link.
+	Set the collision element.
+	Set the visual element.
+	Set the inertial properties.
+	Go to #1 until all links have been added.
+	Add all joints (if any).
+	Add all plugins (if any).
+
+so, all in all, begin with a box and work from there
+
+----------------------------------------------------
+
+4.) Make a Mobile Robot
+
+1. Overview
+- The tutorial demonstrates Gazebo's basic model management,
+- and exercises familiarity with basic model representation inside the model database 
+- by taking the user through the process of creating a two wheeled mobile robot that uses a differential drive mechanism for movement.
+
+2. Setup your model directory
+- You will be creating your own model, 
+	- which must follow the formatting rules for the Gazebo Model Database directory structure.
+
+2.1. Create a model directory:
+> mkdir -p ~/.gazebo/models/my_robot
+
+2.2. Create a model config file:
+> gedit ~/.gazebo/models/my_robot/model.config
+
+2.3. Paste in the following contents model.config:
+<?xml version="1.0"?>
+<model>
+	<name>My Robot</name>
+	<version>1.0</version>
+	<sdf version='1.4'>model.sdf</sdf>
+
+	<author>
+		<name>My Name</name>
+		<email>me@my.email</email>
+	</author>
+
+	<description>
+		My awesome robot.
+	</description>
+</model>
+
+2.4. Create a ~/.gazebo/models/my_robot/model.sdf file.
+> gedit ~/.gazebo/models/my_robot/model.sdf
+
+2.5. Paste in the following model.sdf.
+<?xml version='1.0'?>
+<sdf version='1.4'>
+	<model name="my_robot">
+	</model>
+</sdf>
+
+- At this point we have the basic contents for a model. 
+	- The model.config file describes the robot with some extra meta data. 
+	- The model.sdf file contains the necessary tags to instantiate a model named my_robot using Gazebo linked against SDF version 1.4.
+
+3. Build the Model's Structure
+- This step will create a rectangular base with two wheels.
+- To do this we will make our model static, 
+	- which means it will be ignored by the physics engine. 
+	- As a result the model will stay in one place and allow us to properly align all the components.
+
+3.1. Make the model static by adding a <static>true</static> element to the ~/.gazebo/models/my_robot/model.sdf file:
+- note the <static>true</static> line
+
+<?xml version='1.0'?>
+<sdf version='1.4'>
+	<model name="my_robot">
+		<static>true</static>
+	</model>
+</sdf>
+
+3.2. Add the rectangular base by editing the ~/.gazebo/models/my_robot/model.sdf file:
+<?xml version='1.0'?>
+	<sdf version='1.4'>
+		<model name="my_robot">
+			<static>true</static>
+			<!-- this is new -->
+			<link name='chassis'>
+				<pose>0 0 .1 0 0 0</pose>
+				<collision name='collision'>
+					<geometry>
+						<box>
+							<size>.4 .2 .1</size>
+						</box>
+					</geometry>
+				</collision>
+
+				<visual name='visual'>
+					<geometry>
+						<box>
+						  	<size>.4 .2 .1</size>
+						</box>
+					</geometry>
+				</visual>
+			</link>
+			<!-- this is new -->
+		</model>
+	</sdf>
+
+- Here we have created a box with a size of 0.4 x 0.2 x 0.1 meters. 
+- The <collision> element specifies the shape used by the collision detection engine. 
+- The <visual> element specifies the shape used by the rendering engine. 
+- For most use cases the <collision> and <visual> elements are the same. 
+- The most common use for different collision and visual elements is 
+	- to have a simplified <collision> element 
+	- paired with a <visual> element that uses a complex mesh. 
+	- This will help improve performance.
+
+3.3. Try out your model by running gazebo, and importing your model through the "Insert Model" interface on the GUI.
+> gazebo
+- then insert it, you will se a stupid box
+
+3.4. Now we can add a caster to the robot. 
+- The caster is a sphere with no friction. 
+- This kind of caster is better than adding a wheel with a joint 
+	- since it places fewer constraints on the physics engine.
+
+    <?xml version='1.0'?>
+    <sdf version='1.4'>
+      <model name="my_robot">
+        <static>true</static>
+        <link name='chassis'>
+          <pose>0 0 .1 0 0 0</pose>
+          <collision name='collision'>
+            <geometry>
+              <box>
+                <size>.4 .2 .1</size>
+              </box>
+            </geometry>
+          </collision>
+
+          <visual name='visual'>
+            <geometry>
+              <box>
+                <size>.4 .2 .1</size>
+              </box>
+            </geometry>
+          </visual>
+
+          <!-- this is new -->
+          <collision name='caster_collision'>
+            <pose>-0.15 0 -0.05 0 0 0</pose>
+            <geometry>
+                <sphere>
+                <radius>.05</radius>
+              </sphere>
+            </geometry>
+
+            <surface>
+              <friction>
+                <ode>
+                  <mu>0</mu>
+                  <mu2>0</mu2>
+                  <slip1>1.0</slip1>
+                  <slip2>1.0</slip2>
+                </ode>
+              </friction>
+            </surface>
+          </collision>
+
+          <visual name='caster_visual'>
+            <pose>-0.15 0 -0.05 0 0 0</pose>
+            <geometry>
+              <sphere>
+                <radius>.05</radius>
+              </sphere>
+            </geometry>
+          </visual>
+          <!-- this is new -->
+
+        </link>
+      </model>
+    </sdf>
+
+- then you will see the robot now has the castor wheel in Gazebo
+
+3.5. Now let's add a left wheel. Modify the ~/.gazebo/models/my_robot/model.sdf file to be the following:
+
+    <?xml version='1.0'?>
+    <sdf version='1.4'>
+      <model name="my_robot">
+        <static>true</static>
+        <link name='chassis'>
+          <pose>0 0 .1 0 0 0</pose>
+          <collision name='collision'>
+            <geometry>
+              <box>
+                <size>.4 .2 .1</size>
+              </box>
+            </geometry>
+          </collision>
+
+          <visual name='visual'>
+            <geometry>
+              <box>
+                <size>.4 .2 .1</size>
+              </box>
+            </geometry>
+          </visual>
+
+          <collision name='caster_collision'>
+            <pose>-0.15 0 -0.05 0 0 0</pose>
+            <geometry>
+              <sphere>
+              <radius>.05</radius>
+            </sphere>
+          </geometry>
+
+          <surface>
+            <friction>
+              <ode>
+                <mu>0</mu>
+                <mu2>0</mu2>
+                <slip1>1.0</slip1>
+                <slip2>1.0</slip2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+
+        <visual name='caster_visual'>
+          <pose>-0.15 0 -0.05 0 0 0</pose>
+          <geometry>
+            <sphere>
+              <radius>.05</radius>
+            </sphere>
+          </geometry>
+        </visual>
+      </link>
+
+      <!-- this is new -->
+      <link name="left_wheel">
+        <pose>0.1 0.13 0.1 0 1.5707 1.5707</pose>
+        <collision name="collision">
+          <geometry>
+            <cylinder>
+              <radius>.1</radius>
+              <length>.05</length>
+            </cylinder>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <cylinder>
+              <radius>.1</radius>
+              <length>.05</length>
+            </cylinder>
+          </geometry>
+        </visual>
+      </link>
+     <!-- this is new -->
+
+      </model>
+    </sdf>
+
+3.6. Then the right wheel
+
+We can make a right wheel by copying the left wheel, and adjusting the wheel link's pose:
+
+    <?xml version='1.0'?>
+    <sdf version='1.4'>
+      <model name="my_robot">
+        <static>true</static>
+        <link name='chassis'>
+          <pose>0 0 .1 0 0 0</pose>
+          <collision name='collision'>
+            <geometry>
+              <box>
+                <size>.4 .2 .1</size>
+              </box>
+            </geometry>
+          </collision>
+
+          <visual name='visual'>
+            <geometry>
+              <box>
+                <size>.4 .2 .1</size>
+              </box>
+            </geometry>
+          </visual>
+
+          <collision name='caster_collision'>
+            <pose>-0.15 0 -0.05 0 0 0</pose>
+            <geometry>
+              <sphere>
+              <radius>.05</radius>
+            </sphere>
+          </geometry>
+
+          <surface>
+            <friction>
+              <ode>
+                <mu>0</mu>
+                <mu2>0</mu2>
+                <slip1>1.0</slip1>
+                <slip2>1.0</slip2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+
+        <visual name='caster_visual'>
+          <pose>-0.15 0 -0.05 0 0 0</pose>
+          <geometry>
+            <sphere>
+              <radius>.05</radius>
+            </sphere>
+          </geometry>
+        </visual>
+      </link>
+      <link name="left_wheel">
+        <pose>0.1 0.13 0.1 0 1.5707 1.5707</pose>
+        <collision name="collision">
+          <geometry>
+            <cylinder>
+              <radius>.1</radius>
+              <length>.05</length>
+            </cylinder>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <cylinder>
+              <radius>.1</radius>
+              <length>.05</length>
+            </cylinder>
+          </geometry>
+        </visual>
+      </link>
+
+     <!-- this is new -->
+      <link name="right_wheel">
+        <pose>0.1 -0.13 0.1 0 1.5707 1.5707</pose>
+        <collision name="collision">
+          <geometry>
+            <cylinder>
+              <radius>.1</radius>
+              <length>.05</length>
+            </cylinder>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <cylinder>
+              <radius>.1</radius>
+              <length>.05</length>
+            </cylinder>
+          </geometry>
+        </visual>
+      </link>
+     <!-- this is new -->
+
+      </model>
+    </sdf>
+
+3.7. Make the model dynamic by setting <static> to false, and add two hinge joints for the left and right wheels.
+
+    <?xml version='1.0'?>
+    <sdf version='1.4'>
+      <model name="my_robot">
+
+     <!-- this is new -->
+        <static>false</static>
+     <!-- this is new -->
+
+        <link name='chassis'>
+          <pose>0 0 .1 0 0 0</pose>
+          <collision name='collision'>
+            <geometry>
+              <box>
+                <size>.4 .2 .1</size>
+              </box>
+            </geometry>
+          </collision>
+
+          <visual name='visual'>
+            <geometry>
+              <box>
+                <size>.4 .2 .1</size>
+              </box>
+            </geometry>
+          </visual>
+
+          <collision name='caster_collision'>
+            <pose>-0.15 0 -0.05 0 0 0</pose>
+            <geometry>
+              <sphere>
+              <radius>.05</radius>
+            </sphere>
+          </geometry>
+
+          <surface>
+            <friction>
+              <ode>
+                <mu>0</mu>
+                <mu2>0</mu2>
+                <slip1>1.0</slip1>
+                <slip2>1.0</slip2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+
+        <visual name='caster_visual'>
+          <pose>-0.15 0 -0.05 0 0 0</pose>
+          <geometry>
+            <sphere>
+              <radius>.05</radius>
+            </sphere>
+          </geometry>
+        </visual>
+      </link>
+      <link name="left_wheel">
+        <pose>0.1 0.13 0.1 0 1.5707 1.5707</pose>
+        <collision name="collision">
+          <geometry>
+            <cylinder>
+              <radius>.1</radius>
+              <length>.05</length>
+            </cylinder>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <cylinder>
+              <radius>.1</radius>
+              <length>.05</length>
+            </cylinder>
+          </geometry>
+        </visual>
+      </link>
+
+      <link name="right_wheel">
+        <pose>0.1 -0.13 0.1 0 1.5707 1.5707</pose>
+        <collision name="collision">
+          <geometry>
+            <cylinder>
+              <radius>.1</radius>
+              <length>.05</length>
+            </cylinder>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <cylinder>
+              <radius>.1</radius>
+              <length>.05</length>
+            </cylinder>
+          </geometry>
+        </visual>
+      </link>
+
+     <!-- this is new , hinge = revolute joint -->
+      <joint type="revolute" name="left_wheel_hinge">
+        <pose>0 0 -0.03 0 0 0</pose>
+        <child>left_wheel</child>
+        <parent>chassis</parent>
+        <axis>
+          <xyz>0 1 0</xyz>
+        </axis>
+      </joint>
+
+      <joint type="revolute" name="right_wheel_hinge">
+        <pose>0 0 0.03 0 0 0</pose>
+        <child>right_wheel</child>
+        <parent>chassis</parent>
+        <axis>
+          <xyz>0 1 0</xyz>
+        </axis>
+      </joint>
+     <!-- this is new , hinge = revolute joint -->
+
+      </model>
+    </sdf>
+
+The two joints rotate about the y axis <xyz>0 1 0</xyz>, and connect each wheel to the chassis.
+
+3.8. Start gazebo, and insert your model. Click on the dots to the right of the screen and drag them to the left.
+
+3.9. A new window should appear that contains various controllers for each joint. 
+	- Note Make sure the model you want to control have to be selected
+
+3.10. Under the Force tab, increase the force applied to each joint to about 0.1N-m. The robot should move around
+
+3.11. yay, congrats bitch
+
+-------------------------------------------
+
+5.) Importing Meshes
+
+- This tutorial describes how to import 3D meshes into Gazebo.
+
+1. Prepare the Mesh
+- Gazebo uses a right-hand coordinate system where
+	- +Z is up (vertical),
+	- +X is forward (into the screen),
+	- +Y is to the left.
+
+1.1. Reduce Complexity
+- Many meshes can be overly complex. 
+	- A mesh with many thousands of triangles should be reduced or split into separate meshes for efficiency. 
+	- Look at the documentation of your 3D mesh editor for information about reducing triangle count or splitting up a mesh.
+
+1.2. Center the mesh
+- The first step is to center the mesh at (0,0,0)
+- and orient the front (which can be subjective) along the x-axis.
+
+1.3. Scale the mesh
+- Gazebo uses the metric system.
+-  Many meshes (especially those from 3D warehouse), use English units. 
+- Use your favorite 3D editor to scale the mesh to a metric size.
+
+2. Export the Mesh
+- Once the mesh has been properly prepared, 
+	- export it as a Collada file. 
+	- This format will contain all the 3D information and the materials.
+
+3. Test the Mesh
+- The easiest way to test a mesh is to create a simple world file my_mesh.world that loads the mesh. 
+- Replace my_mesh.dae with the actual filename of the mesh.
+
+<?xml version="1.0"?>
+<sdf version="1.4">
+	<world name="default">
+		<include>
+			<uri>model://ground_plane</uri>
+		</include>
+		<include>
+    		<uri>model://sun</uri>
+    	</include>
+    	<model name="my_mesh">
+      		<pose>0 0 0  0 0 0</pose>
+      		<static>true</static>
+      		<link name="body">
+        		<visual name="visual">
+          			<geometry>
+            			<mesh><uri>file://my_mesh.dae</uri></mesh>
+          			</geometry>
+        		</visual>
+      		</link>
+    	</model>
+  	</world>
+</sdf>
+
+Then just launch Gazebo in the directory where is the file:
+> gazebo my_mesh.world
+
+4. Test Mesh
+- You can use these duck.dae and duck.png mesh files. 
+- Put them together in the same directory as the world file. 
+- Since the duck mesh is defined with the y-axis as up, 
+- you can put a rotation in the sdf so that it displays upright:
+<visual name="visual">
+	<pose>0 0 0 1.5708 0 0</pose>
+  	<geometry>
+    	<mesh><uri>file://duck.dae</uri></mesh>
+  	</geometry>
+</visual>
+
+--------------------------------------
+
+6.) Attaching Meshes
+
+- Meshes can add realism to a model both visually and for sensors. 
+- This tutorial demonstrates how the user can use custom meshes to define how their model will appear in simulation.
+
+1. Attach a Mesh as Visual
+- The most common use case for a mesh is to create a realistic looking visual.
+
+1.1. Navigate to the my_robot directory
+> cd ~/.gazebo/models/my_robot
+
+1.2. Open the model.sdf file using your favorite editor
+> gedit ~/.gazebo/models/my_robot/model.sdf
+
+1.3. We'll add a mesh to the chassis visual. Find the visual with name=visual, which looks like:
+<visual name='visual'>
+	<geometry>
+		<box>
+			<size>.4 .2 .1</size>
+    	</box>
+  	</geometry>
+</visual>
+
+- A mesh can come a file on disk, or from another model. 
+- In this example we'll use a mesh from the pioneer2dx model. 
+- Change the visual element to the following (but keep the the rest of the file intact):
+
+1.4. A mesh can come a file on disk, or from another model. 
+- In this example we'll use a mesh from the pioneer2dx model. 
+- Change the visual element to the following (but keep the the rest of the file intact):
+<visual name='visual'>
+	<geometry>
+    	<mesh>
+      		<uri>model://pioneer2dx/meshes/chassis.dae</uri>
+    	</mesh>
+  	</geometry>
+</visual>
+
+1.5. Look in your locally cached model database to see if you have the pioneer2dx model referenced by above <mesh> block:
+> ls -l ~/.gazebo/models/pioneer2dx/meshes/chassis.dae
+
+- If the mesh file does not exist,
+- make Gazebo pull the model from the Model Database by spawning the Pioneer 2DX model at least once in gazebo (under Insert->http://gazebosim.org/models).
+
+- Or manually download the model files to your local cache:
+> cd ~/.gazebo/models
+> wget -q -R *index.html*,*.tar.gz --no-parent -r -x -nH http://models.gazebosim.org/pioneer2dx/
+
+1.6. In Gazebo, drag the My Robot model in the world. 
+- The visual for the chassis will look like a pioneer2dx.
+- it will look red with some yellow dots
+
+1.7. The chassis is obviously too big for our robot, so we need to scale the visual.
+
+1.8. Change the visual to have a scaling factor
+<visual name='visual'>
+  	<geometry>
+    	<mesh>
+      		<uri>model://pioneer2dx/meshes/chassis.dae</uri>
+			<!-- this is new -->
+	    	<scale>0.9 0.5 0.5</scale>
+	    	<!-- this is new -->
+	    </mesh>
+  	</geometry>
+</visual>
+
+1.9. The visual is also a little too low (along the z-axis). 
+- Let's raise it up a little by specifying a pose for the visual:
+<visual name='visual'>
+	<!-- this is new -->
+	<pose>0 0 0.05 0 0 0</pose>
+	<!-- this is new -->
+	<geometry>
+		<mesh>
+      		<uri>model://pioneer2dx/meshes/chassis.dae</uri>
+      		<scale>0.9 0.5 0.5</scale>
+    	</mesh>
+  	</geometry>
+</visual>
+
+- Note that at this point we have simply modified the <visual> elements of the robot, 
+- so the robot will look like a scaled down version of the Pioneer 2DX model through the GUI 
+	- **and to GPU based sensors such as camera, 
+	- depth camera 
+	- and GPU Lasers.**
+- Since we did not modify the <collision> elements in this model, 
+- the box geometry will still be used by the physics engine for collision dynamics and by CPU based ray sensors.
+
+- When creating a new robot, you'll likely want to use your own mesh file. 
+	- The import a mesh tutorial (section 5.)) describes how to go about importing a mesh into a format suitable for Gazebo.
+
+- this link will be a place to download things https://3dwarehouse.sketchup.com/
+
+------------------------------------
+
+7.) Add a Sensor to a Robot
+
+- This tutorials demonstrates how the user can create composite models directly from other models in the Gazebo Model Database 
+	- by using the <include> tags 
+	- and <joint> to connect different components of a composite model.
+
+1. Adding a Laser
+- Adding a laser to a robot, or any model, is simply a matter of including the sensor in the model.
+
+1.1. Go into your model directory from the previous tutorial:
+> cd ~/.gazebo/models/my_robot
+
+1.2. Open model.sdf in your favorite editor.
+
+1.3. Add the following lines directly before the </model> tag near the end of the file.
+<include>
+	<uri>model://hokuyo</uri>
+	<pose>0.2 0 0.2 0 0 0</pose>
+</include>
+<joint name="hokuyo_joint" type="fixed">
+	<child>hokuyo::link</child>
+	<parent>chassis</parent>
+</joint>
+- The <include> block tells Gazebo to find a model, and insert it at a given <pose> relative to the parent model. 
+- In this case we place the hokuyo laser forward and above the robot. 
+- The <uri> block tells gazebo where to find the model inside its model database 
+	- (note, you can see a listing of the model database uri used by these tutorials here, 
+	- and at the corresponding mercurial repository).
+
+- The new <joint> connects the inserted hokuyo laser onto the chassis of the robot. 
+- The joint is fixed to prevent it from moving.
+- The <child> name in the joint is derived from the hokuyo model's SDF, which begins with:
+<?xml version="1.0" ?>
+<sdf version="1.4">
+	<model name="hokuyo">
+    	<link name="link">
+- When the hokuyo model is inserted, 
+	- the hokuyo's links are namespaced with their model name. 
+	- In this case the model name is hokuyo, 
+	- so each link in the hokuyo model is prefaced with hokuyo::
+	- kinda like java
+
+1.4. Now start gazebo, 
+- and add the robot to the simulation using the Insert tab on the GUI. 
+- If the hokuyo model does not exist locally, 
+	- Gazebo will pull the model from the Model Database. 
+
+- Alternatively, manually download the model files to your local cache:
+> cd ~/.gazebo/models
+> wget -q -R *index.html*,*.tar.gz --no-parent -r -x -nH http://models.gazebosim.org/hokuyo/
+
+- Once gazebo is launched, you should see the robot with a laser attached.
+
+---------------------------------
+
+8.) Make a simple gripper
+
+- simple two-bar pinching gripper by editing SDF files.
+
+1. Create a directory for the world file.
+> mkdir ~/simple_gripper_tutorial; cd ~/simple_gripper_tutorial
+
+2. We will begin with a simple empty world. Create a world file:
+> gedit ~/simple_gripper_tutorial/gripper.world
+
+Copy the following SDF into gripper.world:
+<?xml version="1.0"?>
+	<sdf version="1.4">
+		<world name="default">
+
+    		<!-- A ground plane -->
+    		<include>
+      			<uri>model://ground_plane</uri>
+    		</include>
+
+		    <!-- A global light source -->
+	    	<include>
+	      		<uri>model://sun</uri>
+	    	</include>
+
+		    <include>
+		      <uri>model://my_gripper</uri>
+		    </include>
+
+	    </world>
+  	</sdf>
+
+3. Create a model directory inside ~/.gazebo. This is where we'll put the model files:
+> mkdir -p ~/.gazebo/models/my_gripper
+> cd ~/.gazebo/models/my_gripper
+
+4. Let's layout the basic structure of our gripper. 
+- The easiest way to accomplish this is to make a static model 
+- and add in the links one at a time. 
+	- A static model means the links will not move when the simulator starts. 
+	- This will allow you to start the simulator,
+	- and visually inspect the link placement before adding joints.
+
+5. Create a model.config file:
+> gedit model.config
+
+6. And copy the following contents:
+<?xml version="1.0"?>
+<model>
+	<name>My Gripper</name>
+	<version>1.0</version>
+	<sdf version='1.4'>simple_gripper.sdf</sdf>
+	<author>
+    	<name>My Name</name>
+    	<email>me@my.email</email>
+	</author>
+	<description>
+    	My awesome robot.
+	</description>
+</model>
+
+7. Likewise, create a simple_gripper.sdf file:
+> gedit simple_gripper.sdf
+
+8. And copy the following code into it:
+<?xml version="1.0"?>
+<sdf version="1.4">
+    <model name="simple_gripper">
+        <link name="riser">
+            <pose>-0.15 0.0 0.5 0 0 0</pose>
+            <inertial>
+                <pose>0 0 -0.5 0 0 0</pose>
+                <inertia>
+                    <ixx>0.01</ixx>
+                    <ixy>0</ixy>
+                    <ixz>0</ixz>
+                    <iyy>0.01</iyy>
+                    <iyz>0</iyz>
+                    <izz>0.01</izz>
+                </inertia>
+                <mass>10.0</mass>
+            </inertial>
+            <collision name="collision">
+                <geometry>
+                    <box>
+                        <size>0.2 0.2 1.0</size>
+                    </box>
+                </geometry>
+            </collision>
+            <visual name="visual">
+                <geometry>
+                    <box>
+                        <size>0.2 0.2 1.0</size>
+                    </box>
+                </geometry>
+                <material>
+                    <script>Gazebo/Purple</script>
+                </material>
+            </visual>
+        </link>
+        <link name="palm">
+            <pose>0.0 0.0 0.05 0 0 0</pose>
+            <inertial>
+                <inertia>
+                    <ixx>0.01</ixx>
+                    <ixy>0</ixy>
+                    <ixz>0</ixz>
+                    <iyy>0.01</iyy>
+                    <iyz>0</iyz>
+                    <izz>0.01</izz>
+                </inertia>
+                <mass>0.5</mass>
+            </inertial>
+            <collision name="collision">
+                <geometry>
+                    <box>
+                        <size>0.1 0.2 0.1</size>
+                    </box>
+                </geometry>
+            </collision>
+            <visual name="visual">
+                <geometry>
+                    <box>
+                        <size>0.1 0.2 0.1</size>
+                    </box>
+                </geometry>
+                <material>
+                    <script>Gazebo/Red</script>
+                </material>
+            </visual>
+        </link>
+        <link name="left_finger">
+            <pose>0.1 0.2 0.05 0 0 -0.78539</pose>
+            <inertial>
+                <inertia>
+                    <ixx>0.01</ixx>
+                    <ixy>0</ixy>
+                    <ixz>0</ixz>
+                    <iyy>0.01</iyy>
+                    <iyz>0</iyz>
+                    <izz>0.01</izz>
+                </inertia>
+                <mass>0.1</mass>
+            </inertial>
+            <collision name="collision">
+                <geometry>
+                    <box>
+                        <size>0.1 0.3 0.1</size>
+                    </box>
+                </geometry>
+            </collision>
+            <visual name="visual">
+                <geometry>
+                    <box>
+                        <size>0.1 0.3 0.1</size>
+                    </box>
+                </geometry>
+                <material>
+                    <script>Gazebo/Blue</script>
+                </material>
+            </visual>
+        </link>
+        <link name="left_finger_tip">
+            <pose>0.336 0.3 0.05 0 0 1.5707</pose>
+            <inertial>
+                <inertia>
+                    <ixx>0.01</ixx>
+                    <ixy>0</ixy>
+                    <ixz>0</ixz>
+                    <iyy>0.01</iyy>
+                    <iyz>0</iyz>
+                    <izz>0.01</izz>
+                </inertia>
+                <mass>0.1</mass>
+            </inertial>
+            <collision name="collision">
+                <geometry>
+                    <box>
+                        <size>0.1 0.2 0.1</size>
+                    </box>
+                </geometry>
+            </collision>
+            <visual name="visual">
+                <geometry>
+                    <box>
+                        <size>0.1 0.2 0.1</size>
+                    </box>
+                </geometry>
+                <material>
+                    <script>Gazebo/Blue</script>
+                </material>
+            </visual>
+        </link>
+        <link name="right_finger">
+            <pose>0.1 -0.2 0.05 0 0 .78539</pose>
+            <inertial>
+                <inertia>
+                    <ixx>0.01</ixx>
+                    <ixy>0</ixy>
+                    <ixz>0</ixz>
+                    <iyy>0.01</iyy>
+                    <iyz>0</iyz>
+                    <izz>0.01</izz>
+                </inertia>
+                <mass>0.1</mass>
+            </inertial>
+            <collision name="collision">
+                <geometry>
+                    <box>
+                        <size>0.1 0.3 0.1</size>
+                    </box>
+                </geometry>
+            </collision>
+            <visual name="visual">
+                <geometry>
+                    <box>
+                        <size>0.1 0.3 0.1</size>
+                    </box>
+                </geometry>
+                <material>
+                    <script>Gazebo/Green</script>
+                </material>
+            </visual>
+        </link>
+        <link name="right_finger_tip">
+            <pose>0.336 -0.3 0.05 0 0 1.5707</pose>
+            <inertial>
+                <inertia>
+                    <ixx>0.01</ixx>
+                    <ixy>0</ixy>
+                    <ixz>0</ixz>
+                    <iyy>0.01</iyy>
+                    <iyz>0</iyz>
+                    <izz>0.01</izz>
+                </inertia>
+                <mass>0.1</mass>
+            </inertial>
+            <collision name="collision">
+                <geometry>
+                    <box>
+                        <size>0.1 0.2 0.1</size>
+                    </box>
+                </geometry>
+            </collision>
+            <visual name="visual">
+                <geometry>
+                    <box>
+                        <size>0.1 0.2 0.1</size>
+                    </box>
+                </geometry>
+                <material>
+                    <script>Gazebo/Green</script>
+                </material>
+            </visual>
+        </link>
+        <static>true</static>
+    </model>
+</sdf>
+
+9. Run the world file to visualize what we have created up to this point.
+> gazebo ~/simple_gripper_tutorial/gripper.world
+- You should see a gripper
+
+10. Once we are happy with the layout of the links, 
+- we can add in the joints, 
+- by copying the following code into the simple_gripper.sdf file before the </model> line.
+> gedit ~/.gazebo/models/my_gripper/simple_gripper.sdf
+<joint name="palm_left_finger" type="revolute">
+    <pose>0 -0.15 0 0 0 0</pose>
+    <child>left_finger</child>
+    <parent>palm</parent>
+    <axis>
+        <limit>
+            <lower>-0.4</lower>
+            <upper>0.4</upper>
+        </limit>
+        <xyz>0 0 1</xyz>
+    </axis>
+</joint>
+<joint name="left_finger_tip" type="revolute">
+    <pose>0 0.1 0 0 0 0</pose>
+    <child>left_finger_tip</child>
+    <parent>left_finger</parent>
+    <axis>
+        <limit>
+            <lower>-0.4</lower>
+            <upper>0.4</upper>
+        </limit>
+        <xyz>0 0 1</xyz>
+    </axis>
+</joint>
+<joint name="palm_right_finger" type="revolute">
+    <pose>0 0.15 0 0 0 0</pose>
+    <child>right_finger</child>
+    <parent>palm</parent>
+    <axis>
+        <limit>
+            <lower>-0.4</lower>
+            <upper>0.4</upper>
+        </limit>
+        <xyz>0 0 1</xyz>
+    </axis>
+</joint>
+<joint name="right_finger_tip" type="revolute">
+    <pose>0 0.1 0 0 0 0</pose>
+    <child>right_finger_tip</child>
+    <parent>right_finger</parent>
+    <axis>
+        <limit>
+            <lower>-0.4</lower>
+            <upper>0.4</upper>
+        </limit>
+        <xyz>0 0 1</xyz>
+    </axis>
+</joint>
+<joint name="palm_riser" type="prismatic">
+    <child>palm</child>
+    <parent>riser</parent>
+    <axis>
+        <limit>
+            <lower>0</lower>
+            <upper>0.9</upper>
+        </limit>
+        <xyz>0 0 1</xyz>
+    </axis>
+</joint>
+
+And make the model non-static:
+...
+<static>false</static>
+...
+
+11. Start Gazebo again:
+> gazebo ~/simple_gripper_tutorial/gripper.world
+
+12. Right-click on the model and select 
+- "View->Joints" and "View->Wireframe". 
+- The newly created joints will be displayed:
+
+13. You can also control the forces on each joint using the Joint Control widget. 
+	- Click on the gripper model. 
+	- Then expand this widget by 
+		- clicking on the vertical handle on the right side of the GUI 
+		- and dragging it to the left. 
+	- The widget displays a list of sliders, 
+		- one for each joint. 
+		- Select the Force tab and use the sliders to apply forces to each joint, 
+		- and you should see the gripper move. 
+			- E.g., set the force on palm_riser to 10 (Newtons), and you should see something like:
+				- the gripper moving up slowly
+
+14. Optional:
+    - Add a small box or cylinder to the world, and position it in the gripper.
+    - Try to use the joint control GUI interface to pick up the object.
+- Tip: You may need to adjust reasonable inertia to the object.
+
+-------------------------------------------------------
+
+9.) Attach Gripper to Robot
+
+Overview
+- This tutorial explains how to create a composite robot from existing robot parts, i.e. mobile base, simple arm and simple gripper.
+
+1. Mobile Base
+
+1.1. from the mobile robot we have made, we will now have a decent robot with 2 wheels and one caster
+
+1.2. For this exercise, modify ~/.gazebo/models/my_robot/model.sdf 
+- to make the model larger so it can accommodate the gripper we are about to append to it:
+> gedit ~/.gazebo/models/my_robot/model.sdf
+
+- update the contents to make the model body larger and re-position the wheels accordingly:
+
+<?xml version='1.0'?>
+<sdf version='1.5'>
+  <model name="mobile_base">
+    <link name='chassis'>
+      <pose>0 0 .25 0 0 0</pose>
+
+      <inertial>
+        <mass>20.0</mass>
+        <pose>-0.1 0 -0.1 0 0 0</pose>
+        <inertia>
+          <ixx>0.5</ixx>
+          <iyy>1.0</iyy>
+          <izz>0.1</izz>
+        </inertia>
+      </inertial>
+
+      <collision name='collision'>
+        <geometry>
+          <box>
+            <size>2 1 0.3</size>
+          </box>
+        </geometry>
+      </collision>
+
+      <visual name='visual'>
+        <geometry>
+          <box>
+            <size>2 1 0.3</size>
+          </box>
+        </geometry>
+      </visual>
+
+      <collision name='caster_collision'>
+        <pose>-0.8 0 -0.125 0 0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>.125</radius>
+          </sphere>
+        </geometry>
+
+        <surface>
+          <friction>
+            <ode>
+              <mu>0</mu>
+              <mu2>0</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+
+      <visual name='caster_visual'>
+        <pose>-0.8 0 -0.125 0 0 0</pose>
+        <geometry>
+          <sphere>
+            <radius>.125</radius>
+          </sphere>
+        </geometry>
+      </visual>
+    </link>
+    <link name="left_wheel">
+      <pose>0.8 0.6 0.125 0 1.5707 1.5707</pose>
+      <collision name="collision">
+        <geometry>
+          <cylinder>
+            <radius>.125</radius>
+            <length>.05</length>
+          </cylinder>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <cylinder>
+            <radius>.125</radius>
+            <length>.05</length>
+          </cylinder>
+        </geometry>
+      </visual>
+    </link>
+
+    <link name="right_wheel">
+      <pose>0.8 -0.6 0.125 0 1.5707 1.5707</pose>
+      <collision name="collision">
+        <geometry>
+          <cylinder>
+            <radius>.125</radius>
+            <length>.05</length>
+          </cylinder>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <cylinder>
+            <radius>.125</radius>
+            <length>.05</length>
+          </cylinder>
+        </geometry>
+      </visual>
+    </link>
+
+    <joint type="revolute" name="left_wheel_hinge">
+      <pose>0 0 -0.03 0 0 0</pose>
+      <child>left_wheel</child>
+      <parent>chassis</parent>
+      <axis>
+        <use_parent_model_frame>true</use_parent_model_frame>
+        <xyz>0 1 0</xyz>
+      </axis>
+    </joint>
+
+    <joint type="revolute" name="right_wheel_hinge">
+      <pose>0 0 0.03 0 0 0</pose>
+      <child>right_wheel</child>
+      <parent>chassis</parent>
+      <axis>
+        <use_parent_model_frame>true</use_parent_model_frame>
+        <xyz>0 1 0</xyz>
+      </axis>
+    </joint>
+
+  </model>
+</sdf>
+
+2. Assembling a Composite Robot
+2.1. To create a mobile robot with a simple gripper attached, 
+- create a new models directory
+
+mkdir ~/.gazebo/models/simple_mobile_manipulator
+
+And edit the model config file:
+
+gedit ~/.gazebo/models/simple_mobile_manipulator/model.config
+
+populate it with the following contents:
+
+<?xml version="1.0"?>
+<model>
+  <name>Simple Mobile Manipulator</name>
+  <version>1.0</version>
+  <sdf version='1.5'>manipulator.sdf</sdf>
+
+  <author>
+    <name>My Name</name>
+    <email>me@my.email</email>
+  </author>
+
+  <description>
+    My simple mobile manipulator
+  </description>
+</model>
+
+2.2. Next, create the model SDF file:
+> gedit ~/.gazebo/models/simple_mobile_manipulator/manipulator.sdf
+
+- and populate with following contents:
+
+<?xml version="1.0" ?>
+<sdf version="1.5">
+  <model name="simple_mobile_manipulator">
+
+    <include>
+      <uri>model://my_gripper</uri>
+      <pose>1.3 0 0.1 0 0 0</pose>
+    </include>
+
+    <include>
+      <uri>model://my_robot</uri>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+
+    <joint name="arm_gripper_joint" type="fixed">
+      <parent>mobile_base::chassis</parent>
+      <child>simple_gripper::riser</child>
+    </joint>
+
+    <!-- attach sensor to the gripper -->
+    <include>
+      <uri>model://hokuyo</uri>
+      <pose>1.3 0 0.3 0 0 0</pose>
+    </include>
+
+    <joint name="hokuyo_joint" type="fixed">
+      <child>hokuyo::link</child>
+      <parent>simple_gripper::palm</parent>
+    </joint>
+
+  </model>
+</sdf>
+
+2.3. Make sure the model.config and manipulator.sdf files above are saved, 
+- start Gazebo and spawn the model above by using the insert tab and choosing Simple Mobile Manipulator model. 
+- You should see something similar to: a robot with a gripper and a sensor
+
+---------------------------------
+
+10.) Nested Model
+
+This tutorial describes how you can embed a model inside another to create an assembly of models.
+
+1. Nested Model
+- It was seen in the Make a model tutorial that a model SDF is composed of a collection of links and joints. 
+- As of SDF 1.5, the <model> SDF element has been extended to support self-referencing, 
+	- which means allowing <model> elements to be nested. 
+	- Support for loading nested <model> elements has been added in Gazebo 7.
+
+Here is a basic example of a nested model SDF:
+<sdf version="1.6">
+    <model name="model_00">
+        <pose>0 0 0.5 0 0 0</pose>
+        <link name="link_00">
+            <pose>0.0 0 0 0 0 0</pose>
+            <collision name="collision_00">
+                <geometry>
+                <sphere>
+    		        <radius>0.5</radius>
+	            </sphere>
+      		  	</geometry>
+      		</collision>
+      		<visual name="visual_00">
+        		<geometry>
+    		        <sphere>
+            			<radius>0.5</radius>
+          			</sphere>
+        		</geometry>
+      		</visual>
+    	</link>
+
+	    <model name="model_01">
+	    	<pose>1.0 0 0.0 0 0 0</pose>
+	      	<link name="link_01">
+	        	<pose>0.25 0 0.0 0 0 0</pose>
+	        	<collision name="collision_01">
+	          		<geometry>
+	            		<box>
+	              			<size>1 1 1</size>
+	            		</box>
+	          		</geometry>
+	        	</collision>
+	        	<visual name="visual_01">
+	          		<geometry>
+	            		<box>
+	              			<size>1 1 1</size>
+	            		</box>
+	          		</geometry>
+	        	</visual>
+	      	</link>
+    	</model>
+ 	 </model>
+</sdf>
+
+- so the second <model> is inside the first <model>
+
+- This model SDF is composed of a link (link_00), 
+- and a nested model (model_01) 
+- with another link (link_01). 
+- Since a model in Gazebo is just an abstract container for a group of objects,
+	- loading this model in Gazebo will result in just two rigid bodies being created in the physics engine; 
+		- one for the sphere link 
+		- and the other for the nested box link. 
+	- By default, they will not self-collide just like other links within the same model. 
+	- On the GUI client, you will see a sphere and a box sitting side-by-side 
+	- and should not notice any visual difference between nested models and links.
+
+2. Joints
+- Joints can also be created between links in nested models. 
+- Here is an example of a joint that can be added to the model SDF above:
+<joint name="joint_00" type="revolute">
+	<parent>link_00</parent>
+	<child>model_01::link_01</child>
+	<pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+	<axis>
+  		<xyz>1.0 0.0 0.0</xyz>
+	</axis>
+</joint>
+- note that the link01 is in the model01
+
+- This joint SDF element can be added to either the top level or nested <model> element. 
+- A revolute joint is then created between the sphere and the box links. 
+- Pay attention to the scoping of <parent> and <child> names; 
+	- references to nested model links need to be scoped 
+	- *** but minus the top level model name prefix.
+
+3. Note on the include SDF element
+- Another approach for nesting models is demonstrated in the Add a Sensor to a Robot tutorial which introduces the use of the <include> element.
+
+- The <include> element works by taking all the links from the included model and embedding them into the parent model. 
+	- The downside of this approach is that the model representation is modified during the process, 
+	- i.e. saving the world will result in a model with all the links combined together in one <model> element 
+		- without preserving the <include> tag. 
+		- This is one of the shortcomings which the nested <model> element is designed to address.
+
+- On the other hand, the <include> element is a simple and clean solution 
+- that only requires a reference to an SDF file for creating a model assembly. 
+- Future work will look into extending the nested <model> SDF element with this feature.
+
+- moral of the story, use include and don't use nested thing
+
+------------------------------------------
+
+11.) Model Editor
+
+- This tutorial describes the process of creating a model using the Model Editor.
+- so that we don't have to write lines like an idiot
+
+1. Graphical user interface
+- The editor is composed of the following 2 areas:
+    - The Palette on the left 
+    	- has two tabs. 
+    		- The Insert tab 
+    		- lets you insert parts (links and other models) into the scene to build the model. 
+    		- The Model tab 
+    		- displays a list of all the parts that make up the model you are building.
+
+    - The 3D View on the right 
+    	- where you can see a preview of your model
+    	- and interact with it to
+    	- edit its properties 
+    	- and create joints between links.
+
+- The GUI tools on the top toolbar 
+	- can be used to manipulate joints and links in the 3D View.
+
+2. Add Links
+2.1. Add simple shapes
+- The model editor has three simple primitive geometries that the user can insert into the 3D view to make a link of the model.
+
+2.1.1. On the Palette, click on the box, sphere, or cylinder icon under Simple Shapes.
+	- Move your mouse cursor over the 3D view to see the visual appear, and click/release anywhere to add it to the model.
+    - Tip: You can press Esc to cancel adding the current link attached to the mouse cursor.
+
+2.1.2. Add meshes
+- To add a custom mesh,
+    - Click on the Add button under Custom Shapes, 
+    	- which pops up a dialog that 
+    	- lets you find the mesh you want to add.
+
+    - Click on Browse button 
+    - and use the file browser to find the mesh file on your local machine. 
+    - If you know the path of the mesh file, you can enter it directly in the text field box next to the Browse button. 
+    - Gazebo 8 supports 
+    	- COLLADA (.dae), 
+    	- 3D Systems (.stl),
+    	- Wavefront (.obj) and
+    	- W3C SVG (.svg) files.
+
+    - Click Import to load the mesh file. Then, add it to the 3D view.
+
+3. Create Joints
+- The model editor supports creating several types of joints between links in the model being edited. 
+- To create a joint:
+
+3.1. Click on the joint icon on the tool bar. 
+- This brings up the Joint Creation Dialog
+- which allows you to specify different properties of the joint you want to create. 
+- As you can see in the dialog, the default joint type is a Revolute joint.
+
+3.2. Begin by moving your mouse over the link you wish to create a joint 
+	- for to see it being highlighted and click on it. 
+	- This link will be the parent link of the joint.
+
+3.3. Next, move your mouse to the link which you would like to be the child link of the joint. 
+	- Click on it to see a colored line connecting the two links and a joint visual attached to the child link.
+
+	- The line representing the joint is color-coded. Play around with different joint types to see the colors.
+
+- The joint visual consists of RGB axes 
+	- which help to give an idea of the coordinate frame of the joint. 
+	- ***The yellow arrow indicates the primary axis of the joint. 
+		- For example, in the case of a revolute joint,
+		- this is the axis of rotation.
+
+3.4. Once you have specified all the desired properties of the joint in the Joint Creation Dialog, 
+- **click on the Create button at the bottom to finalize joint creation.
+
+- Tip: You can press Esc any time to cancel the joint creation process.
+- come on, it's just click joint -> click parent -> click child -> click create
+
+4. Edit your model
+- Tip: If you make a mistake, click the undo button on the toolbar to undo the last action.
+- Tip: All measurements are in meters.
+
+4.1. Edit links
+- The model editor supports editing properties of a link which you would also find in its SDF.
+- To edit a link's properties: 
+	- Double-click on the link 
+	- or right click and 
+		- select Open Link Inspector. 
+	- A dialog window will appear which contains Link, Visual, and Collision property tabs.
+
+- As an example, try changing the link pose and visual colors. 
+- Once you are done, click on OK to close the inspector.
+
+4.2. Edit joints
+- As mentioned earlier, joint properties can also be edited. 
+- These are properties that you would find in the joint SDF.
+
+- To edit a joint:
+	- Double-click on the line connecting the links 
+	- or right click on it and
+		- select Open Joint Inspector.
+		- The joint inspector will appear.
+
+- As an example, try changing the joint pose and joint type. 
+- Once you are done, click on OK to close the inspector.
+
+4.3. Saving your model
+- Saving will create
+	- a directory,
+	- SDF and
+	- config files for your model.
+
+- As an exercise, let's build a simple car and save it. 
+- The car will have a box chassis and four cylinder wheels. 
+	- Each wheel will be connected to the chassis with a revolute joint
+
+- Once you're happy with the model you created, 
+	- go to the Model tab in the left panel and
+	- give it a name.
+
+- To save the model, 
+	- choose File, then Save As (or hit Ctrl+S) in the top menu.
+	- A dialog will come up where you can choose the location for your model.
+
+4.4. Exit
+- When you're done creating the model and you've saved it, 
+- go to File and then 
+- Exit Model Editor.
+- Your model will show up in the main window.
+
+4.5. Edit existing models
+- Rather than creating a model from the ground up; 
+- you can also edit existing models that are already in the simulation.
+
+- To edit an existing model:
+	- Make sure you have saved the model you created, 
+	- and you have exited the model editor.
+	- Alternatively, start from a fresh Gazebo instance.
+
+    - Insert a model from the Insert tab on the left. 
+    	- For example, let's insert a Simple Arm.
+
+    - Right click on the model you just inserted and select Edit Model.
+
+- Now you are in the model editor 
+- and you are free to add new links to the model 
+- or edit existing ones
+
+--------------------------------------------
+
+12.) Animated Box
+
+- This tutorial creates a simulation world with a simple box that is
+- animated in a 10 second repeating loop where 
+- it slides around on the ground.
+
+- This tutorial also demonstrates several different ways of viewing, accessing, and interacting with simulation 
+- using the Gazebo executable or your own custom executable.
+
+- The simulated box 
+	- broadcasts its pose,
+	- and a callback is created to receive the pose
+	- and print out the location and timestamp of the box.
+
+1. Setup
+- Create a working directory.
+> mkdir ~/gazebo_animatedbox_tutorial
+> cd ~/gazebo_animatedbox_tutorial
+
+2. Animate box code
+- Copy animated_box.cc, independent_listener.cc, integrated_main.cc, CMakeLists.txt, and animated_box.world into the current directory.
+> wget http://bitbucket.org/osrf/gazebo/raw/gazebo8/examples/stand_alone/animated_box/animated_box.cc
+> wget http://bitbucket.org/osrf/gazebo/raw/gazebo8/examples/stand_alone/animated_box/independent_listener.cc
+> wget http://bitbucket.org/osrf/gazebo/raw/gazebo8/examples/stand_alone/animated_box/integrated_main.cc
+> wget http://bitbucket.org/osrf/gazebo/raw/gazebo8/examples/stand_alone/animated_box/CMakeLists.txt
+> wget http://bitbucket.org/osrf/gazebo/raw/gazebo8/examples/stand_alone/animated_box/animated_box.world
+
+- Build the plugin
+> mkdir build
+> cd build
+> cmake ../
+> make
+
+- Make sure Gazebo can load the plugins later
+> export GAZEBO_PLUGIN_PATH=`pwd`:$GAZEBO_PLUGIN_PATH
+
+3. Simulate with gazebo
+- This example demonstrates how to use the normal gazebo executable with a plugin.
+- Run using gazebo itself with:
+> cd ~/gazebo_animatedbox_tutorial
+> gazebo animated_box.world
+
+- In another terminal, use "gz topic" user interface to view the pose:
+> gz topic -v /gazebo/animated_box_world/pose/info
+
+- You should see a graphical interface that displays the pose of the box.
+
+4. Connect to a simulation with your own executable
+- Make sure Gazebo is not running.
+
+- We will start Gazebo as above, 
+- and then run the independent listener executable that connects to Gazebo. 
+- The independent listener receives the location 
+- and timestamp of the box and prints it out.
+
+> cd ~/gazebo_animatedbox_tutorial
+> gazebo animated_box.world & ./build/independent_listener
+
+5. Run the simulation and connect with your own executable
+- Make sure Gazebo is not running.
+- The integrated_main example demonstrates the following:
+    5.1. Start the box simulation.
+    5.2. Connect a listener to the simulation as part of the same executable.
+    5.3. The listener gets the timestamp and pose, then prints each out.
+
+- Run integrated_main:
+> cd ~/gazebo_animatedbox_tutorial
+> ./build/integrated_main animated_box.world
+
+- To view the simulation run the command:
+> gzclient
+
+5. SOURCE CODE
+- independent_listener.cc
+	- Executable that will 
+		- connect to a running simulation, 
+		- receive updates from the pose information topic,
+		- and print the object position.
+
+- integrated_main.cc
+	- Executable that will create a simulation,
+	- receive updates from the pose information topic,
+	- and print the object position.
+
+- animated_box.cc
+	- Shared library plugin that defines the animation component of the simulation,
+	- moving the box that is in the world.
+
+- animated_box.world
+	- XML file that defines the simulation physical world space
+	- and the single box that is in it.
+
+- CMakeLists.txt
+	- CMake build script.
+
+-----------------------------------------
+
+13.) Animated Model, only for gazebo 8+, skipped
+- http://gazebosim.org/tutorials?tut=actor&cat=build_robot
+
+------------------------------------------
+
+14.) Inertial parameters of triangle meshes
+
+- An accurate simulation requires physically plausible inertial parameters: 
+	- the mass,
+	- center of mass location,
+	- and the moment of inertia matrix of all links.
+- This tutorial will guide you through the process of obtaining and setting these parameters if you have 3D models of the links.
+
+- Assuming homogeneous bodies (uniform mass density),
+- it is shown how to obtain inertial data using the free software "MeshLab". 
+- If you wish to skip the setup and only compute
+	- the volume,
+	- center of mass,
+	- or inertia properties of your model,
+	- or quickly clean the model,
+	- you can use Mesh Cleaner,
+		- a tool which runs MeshLab internally for this purpose.
+	- You can also use the commercial product SolidWorks to compute these information.
+	- For a guide on using SolidWorks, please refer to this question on answers.ros.org. http://answers.ros.org/question/30539/choosing-the-right-coefficients-for-gazebo-simulation/
+
+1. Summary of inertial parameters
+- mass
+- center of mass
+- moment to inertia matrix
+	- The moments of inertia can be expressed as the components of a symmetric positive-definite 3x3 matrix, with 
+		- 3 diagonal elements, and 
+		- 3 unique off-diagonal elements.
+	- Each inertia matrix is defined relative to a coordinate frame or set of axes. 
+	- Diagonalizing the matrix yields
+		- its principal moments of inertia (the eigenvalues) and 
+		- the orientation of its principal axes (the eigenvectors).
+
+	- The moments of inertia are
+		- proportional to mass
+		- but vary in a non-linear manner with respect to size. 
+	- Additionally, there are constraints on the relative values of the principal moments that typically make it much more difficult to estimate moments of inertia than mass or center of mass location. 
+	- This difficulty motivates the use of software tools for computing moment of inertia.
+
+	- If you're curious about the math behind the inertia matrix, 
+	- or just want an easy way to calculate the tensor for simple shapes, 
+	- this wikipedia entry is a great resource. https://en.wikipedia.org/wiki/List_of_moments_of_inertia
+
+2. Preparation
+2.1. Installing MeshLab (done)
+- Once installed, you can view your meshes in MeshLab 
+- (both DAE and STL formats are supported,
+- which are those ones supported by Gazebo/ROS).
+
+3. Computing the inertial parameters
+3.1. Computing inertia of sphere
+- Open the mesh file in MeshLab. 
+	- For this example, a sphere.dae mesh is used. 
+- To compute the inertial parameters, 
+- you first need to display the Layers dialog 
+	- View->Show Layer Dialog. 
+	- A panel opens in the right part of the window 
+	- which is split in half 
+	- we're interested in the lower part containing text output.
+
+- Next, command MeshLab to compute the inertial parameters. 
+	- Choose Filters->Quality Measure 
+	- and Computations->Compute Geometric Measures from the menu.
+	- The lower part of the Layers dialog should now show some info about the inertial measures. 
+	- The sphere gives the following output:
+		Mesh Bounding Box Size 2.000000 2.000000 2.000000
+		Mesh Bounding Box Diag 3.464102
+		Mesh Volume is 4.094867
+		Mesh Surface is 12.425012
+		Thin shell barycenter -0.000000 -0.000000 -0.000000
+		Center of Mass is -0.000000 0.000000 -0.000000
+		Inertia Tensor is :
+		| 1.617916 -0.000000 0.000000 |
+		| -0.000000 1.604620 -0.000000 |
+		| 0.000000 -0.000000 1.617916 |
+		Principal axes are :
+		| 0.000000 1.000000 0.000000 |
+		| -0.711101 -0.000000 0.703089 |
+		| -0.703089 0.000000 -0.711101 |
+		axis momenta are :
+		| 1.604620 1.617916 1.617916 |
+	- in this case
+		- bounding box = radius
+		- volume = 4/3 * pi * r**3
+		- surface area = 4 * pi * r**2
+		- center of mass = 0,0,0
+		- inertia matrix, 2/5 * m * r**2
+
+3.2. Duplicate faces
+- One thing to keep in mind is that duplicate faces within a mesh will affect the calculation of volume and moment of inertia.
+- For example, consider another spherical mesh: ball.dae. 
+- Meshlab gives the following output for this mesh
+	Mesh Bounding Box Size 1.923457 1.990389 1.967965
+	Mesh Bounding Box Diag 3.396207
+	Mesh Volume is 7.690343
+	Mesh Surface is 23.967396
+	Thin shell barycenter 0.000265 0.000185 0.000255
+	Center of Mass is 0.000257 0.000195 0.000292
+	Inertia Tensor is :
+	| 2.912301 0.001190 0.000026 |
+	| 0.001190 2.903731 0.002124 |
+	| 0.000026 0.002124 2.906963 |
+	Principal axes are :
+	| 0.108262 -0.895479 0.431738 |
+	| -0.120000 0.419343 0.899862 |
+	| 0.986853 0.149229 0.062058 |
+	axis momenta are :
+	| 2.902563 2.907949 2.912483 |
+
+- This mesh is approximately the same size, 
+	- the bounding box should be about 1
+	- but with bounding box dimensions in the range [1.92,1.99]
+	- its calculations are different by nearly double:
+    - volume: 7.69 vs. 4.09
+    - principal moments: [2.90,2.91] vs. [1.60,1.62]
+
+- There is a clue to the difference when you look at the numbers of vertices and faces (listed in the bottom of the MeshLab window):
+    - sphere.dae: 382 vertices, 760 faces
+    - ball.dae: 362 vertices, 1440 faces
+
+- Each mesh has a similar number of vertices, 
+	- but ball.dae has roughly twice as many faces. 
+	- *** Running the command Filters -> Cleaning and Repairing -> Remove Duplicate Faces 
+		- reduces the number of faces in ball.dae to 720 
+		- and gives more reasonable values for the volume (3.84)
+		- and principal moments of inertia (1.45).
+		- It makes sense that these values are slightly smaller since the bounding box is slightly smaller as well.
+
+- so duplicate faces (2 faces in the same place) makes the values different
+
+3.3. Scaling to increase numerical precision
+- Meshlab currently prints the geometric information with 6 digits of fixed point precision. 
+- If your mesh is too small, this may substantially limit the precision of the inertia tensor, for example:
+	Mesh Bounding Box Size 0.044000 0.221000 0.388410
+	Mesh Bounding Box Diag 0.449043
+	Mesh Volume is 0.001576
+	Mesh Surface is 0.136169
+	Thin shell barycenter -0.021954 0.008976 0.012835
+	Center of Mass is -0.021993 0.001259 0.001489
+	Inertia Tensor is :
+	| 0.000008 -0.000000 -0.000000 |
+	| -0.000000 0.000001 -0.000000 |
+	| -0.000000 -0.000000 0.000007 |
+	Principal axes are :
+	| 0.999999 0.000166 0.001241 |
+	| -0.000113 0.999104 -0.042310 |
+	| -0.001247 0.042310 0.999104 |
+	axis momenta are :
+	| 0.000008 0.000001 0.000007 |
+
+- It seems like we have what we were seeking for.
+- But when you look thoroughly, you will see one bad thing 
+	- the output is written out only up to 6 decimal digits.
+	- As a consequence, we lose most of the valuable information in the inertia tensor.
+	- To overcome lack of precision in the Inertia Tensor, 
+	- you can scale up the model so that the magnitude of the inertia is increased.
+	- The model can be scaled using Filters->Normals, Curvatures and Orientation->Transform: Scale. 
+	- Enter a scale in the dialog and hit Apply.
+
+- To decide the scaling factor s to choose, 
+	- recall that MeshLab uses the volume as a proxy for mass,
+	- which will vary as s3.
+	- Furthermore, the inertia has an addition dependence on length2, 
+		- so the moment of inertia will change according to s5. 
+		- Since there is such a large dependence on s, 
+		- scaling by a factor of 10 or 100 may be sufficient.
+
+- Now, instruct MeshLab to recompute the geometrical measures again,
+- and the Inertia Tensor entry should have more precision.
+- Then multiply the inertia tensor by 1/s5 to undo the scaling.
+
+3.4. Getting the Center of Mass
+- It is not always the case that MeshLab uses the same length units as you'd want (meters for Gazebo). 
+- However, you can easily tell the ratio of MeshLab units to your desired units by looking at the Mesh Bounding Box Size entry. 
+- You can e.g. compute the bounding box size in your desired units and compare to the MeshLab's one.
+
+- Multiply the Center of Mass entry with the computed ratio 
+- and you have the coordinates of the Center of Mass of your mesh. 
+- However, if the link you are modeling is not homogeneous,
+- you will have to compute the Center of Mass using other methods 
+	- (most probably by real experiments).
+
+3.4. Rescaling the moment of inertia values
+- Just like the center of mass location must be scaled to the correct units, 
+- the moment of inertia should be scaled as well, 
+- though the scale factor should be squared to account for the length2 dependence in the moment of inertia. 
+- In addition, the inertia should be multiplied by the measured mass and divided by the computed volume from the text output.
+
+3.5. Filling in the tags in URDF or SDF
+
+- The next step is to record the computed values to the URDF or SDF file containing your robot 
+- (it is assumed you already have the robot model; if not, follow the tutorial Make a Model).
+
+- In each link you should have the <inertial> tag. It should look like the following (in SDF):
+
+<link name='antenna'>
+  <inertial>
+    <pose>-0.022 0.0203 0.02917 0 0 0</pose>
+    <mass>0.56</mass>
+    <inertia>
+      <ixx>0.004878</ixx>
+      <ixy>-6.2341e-07</ixy>
+      <ixz>-7.4538e-07</ixz>
+      <iyy>0.00090164</iyy>
+      <iyz>-0.00014394</iyz>
+      <izz>0.0042946</izz>
+    </inertia>
+  </inertial>
+  <collision name='antenna_collision'>
+    ...
+  </collision>
+  <visual name='antenna_visual'>
+    ...
+  </visual>
+  ...
+</link>
+
+or like this one (in URDF):
+
+<link name="antenna">
+  <inertial>
+    <origin rpy="0 0 0" xyz="-0.022 0.0203 0.02917"/>
+    <mass value="0.56"/>
+    <inertia ixx="0.004878" ixy="-6.2341e-07" ixz="-7.4538e-07" iyy="0.00090164" iyz="-0.00014394" izz="0.0042946"/>
+  </inertial>
+  <visual>
+    ...
+  </visual>
+  <collision>
+    ...
+  </collision>
+
+- The <mass> should be entered in kilograms and you have to find it out experimentally (or from specifications).
+
+- The <origin> or <pose> are used to enter the Center of Mass position (relative to the link's origin; especially not relative to the link's visual or collision origin). 
+- The rotational elements can define a different coordinate from for the moment of inertia axes. 
+- If you've found out the center of mass experimentally, fill in this value, 
+- otherwise fill in the correctly scaled value computed by MeshLab.
+
+The <inertia> tag contains the inertia tensor you have computed in the previous step. 
+- Since the matrix is symmetric, only 6 numbers are sufficient to represent it. 
+
+- *** The mapping from MeshLab's output is the following:
+| ixx ixy ixz |
+| ixy iyy iyz |
+| ixz iyz izz |
+
+- As a quick check that the matrix is sane, 
+	you can use the rule that the diagonal entries should 
+		- have the largest values and
+		- be positive,
+		- and the off-diagonal numbers should more or less 
+			- approach zero.
+
+- Precisely, the matrix has to be positive definite (use your favorite maths tool to verify that). 
+- Its diagonal entries also have to satisfy the triangle inequality,
+	- ie. ixx + iyy >= izz, ixx + izz >= iyy and iyy + izz >= ixx.
+
+3.6. Checking in Gazebo
+- To check if everything is done correctly, you can use Gazebo's GUI client.
+
+3.6.1. Using Gazebo standalone
+3.6.1.1. Run Gazebo
+> gazebo
+3.6.1.2. Spawn your robot
+> gz model -f my_robot.sdf
+
+3.6.2. Using Gazebo with ROS
+3.6.2.1. Run Gazebo
+> roslaunch gazebo_ros empty_world.launch
+
+3.6.2.2. Spawn your robot (substitute my_robot, my_robot_description and MyRobot with your robot's package/name):
+
+	- SDF model:
+    > rosrun gazebo_ros spawn_model -sdf -file `rospack find my_robot_description`/urdf/my_robot.sdf -model MyRobot
+
+    - URDF model:
+    > rosrun gazebo_ros spawn_model -urdf -file `rospack find my_robot_description`/urdf/my_robot.urdf -model MyRobot
+
+As soon as your model loads, pause the world and delete the ground_plane (this is not needed, but it usually makes debugging easier).
+
+- Go to the Gazebo menu and select View->Inertia. 
+- Every link should now display a purple box with green axes. 
+	- The center of each box is aligned with the specified center of mass of its link. 
+	- The sizes and orientations of the boxes correspond to
+		- unit-mass boxes with the same inertial behavior as their corresponding links.
+		- This is useful for debugging the inertial parameters,
+		- but we can make one more thing to have the debugging easier.
+
+			- You can temporarily set all the links to have a mass of 1.0 (by editing the URDF or SDF file).
+			- Then all the purple boxes should have more or less the same shapes as the bounding boxes of their links.
+			- This way you can easily detect problems like misplaced Center of Mass or wrongly rotated Inertia Matrix.
+			- Do not forget to enter the correct masses when you finish debugging.
+
+- To fix a wrongly rotated Inertia Matrix (which in fact happens often),
+	- just swap the ixx, iyy, izz entries in the model file
+		- until the purple box aligns with its link.
+		- Then you obviously also have to appropriately swap the ixy, ixz and iyz values
+			- (when you swap ixx<->iyy, then you should negate ixy and swap ixz<->iyz).
+			- so swap such that the rows and the columns makes sense
+
+4. Simplify the model
+- MeshLab only computes correct inertia parameters for closed shapes. 
+- If your link is open or if it is a very complex or concave shape, 
+	- it might be a good idea to simplify the model (e.g. in Blender) before computing the inertial parameters. 
+	- Or, if you have the collision shapes for your model, use them in place of the full-resolution model.
+
+5. Non-homogeneous bodies
+
+- For strongly non-homogeneous bodies, this tutorial might not work. There are two problems. 
+	- The first one is that MeshLab assumes uniform-density bodies.
+	- The other is that MeshLab computes the Inertia Tensor relative to the computed center of mass. 
+- However, for strongly non-homogeneous bodies, 
+	- the computed center of mass will be far from the real center of mass,
+	- and therefore the computed inertia tensor might be just wrong.
+
+- One solution is to subdivide your link to more homogeneous parts 
+- and connect them with fixed joints
+- but that is not always possible.
+-  The only other solution would be to find out the inertia tensor experimentally, 
+- which would surely take a lot of time and effort.
+- so, assume homogeneous if possible
+---------------------------------------------
+
+15.) Visibility layers
+
+- With Gazebo 6 it is possible to add meta data to the visuals in your simulation. 
+- This tutorial explains how to add layer meta data to visuals 
+	- so you can control which layers are visible via the graphical interface.
+
+1. Assigning layers on SDF
+- *** Currently, layers are identified by numbers. 
+- In your model SDF file, 
+	- under each <visual> tag, 
+	- you can add a <meta> tag for meta information 
+	- and then a <layer> tag with the layer number as follows:
+
+		<visual name='visual_0'>
+			<meta>
+				<layer>0</layer>
+			</meta>
+		</visual>
+
+- Visuals without a layer assigned can't have their visibility toggled 
+	- and will always be visible.
+
+2. Visualizing layers
+- An example world is distributed with Gazebo. 
+- You can load this world using the following command:
+> gazebo worlds/shapes_layers.world
+- You can toggle the visibility of each layer via the Layers tab on the left panel:
+- If no visuals on the simulation have a layer, the layers tab will be empty.
+
+====================================================

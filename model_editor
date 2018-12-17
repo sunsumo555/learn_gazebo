@@ -1,0 +1,263 @@
+1.) Model Editor
+> gazebo
+- Ctrl + M
+
+- This tutorial describes the process of creating a model using the Model Editor.
+- so that we don't have to write lines like an idiot
+
+1. Graphical user interface
+- The editor is composed of the following 2 areas:
+    - The Palette on the left 
+    	- has two tabs. 
+    		- The Insert tab 
+    		- lets you insert parts (links and other models) into the scene to build the model. 
+    		- The Model tab 
+    		- displays a list of all the parts that make up the model you are building.
+
+    - The 3D View on the right 
+    	- where you can see a preview of your model
+    	- and interact with it to
+    	- edit its properties 
+    	- and create joints between links.
+
+- The GUI tools on the top toolbar 
+	- can be used to manipulate joints and links in the 3D View.
+
+2. Add Links
+2.1. Add simple shapes
+- The model editor has three simple primitive geometries that the user can insert into the 3D view to make a link of the model.
+
+2.1.1. On the Palette, click on the box, sphere, or cylinder icon under Simple Shapes.
+	- Move your mouse cursor over the 3D view to see the visual appear, and click/release anywhere to add it to the model.
+    - Tip: You can press Esc to cancel adding the current link attached to the mouse cursor.
+
+2.1.2. Add meshes
+- To add a custom mesh,
+    - Click on the Add button under Custom Shapes, 
+    	- which pops up a dialog that 
+    	- lets you find the mesh you want to add.
+
+    - Click on Browse button 
+    - and use the file browser to find the mesh file on your local machine. 
+    - If you know the path of the mesh file, you can enter it directly in the text field box next to the Browse button. 
+    - Gazebo 8 supports 
+    	- COLLADA (.dae), 
+    	- 3D Systems (.stl),
+    	- Wavefront (.obj) and
+    	- W3C SVG (.svg) files.
+
+    - Click Import to load the mesh file. Then, add it to the 3D view.
+
+3. Create Joints
+- The model editor supports creating several types of joints between links in the model being edited. 
+- To create a joint:
+
+3.1. Click on the joint icon on the tool bar. 
+- This brings up the Joint Creation Dialog
+- which allows you to specify different properties of the joint you want to create. 
+- As you can see in the dialog, the default joint type is a Revolute joint.
+
+3.2. Begin by moving your mouse over the link you wish to create a joint 
+	- for to see it being highlighted and click on it. 
+	- This link will be the parent link of the joint.
+
+3.3. Next, move your mouse to the link which you would like to be the child link of the joint. 
+	- Click on it to see a colored line connecting the two links and a joint visual attached to the child link.
+
+	- The line representing the joint is color-coded. Play around with different joint types to see the colors.
+
+- The joint visual consists of RGB axes 
+	- which help to give an idea of the coordinate frame of the joint. 
+	- ***The yellow arrow indicates the primary axis of the joint. 
+		- For example, in the case of a revolute joint,
+		- this is the axis of rotation.
+
+3.4. Once you have specified all the desired properties of the joint in the Joint Creation Dialog, 
+- **click on the Create button at the bottom to finalize joint creation.
+
+- Tip: You can press Esc any time to cancel the joint creation process.
+- come on, it's just click joint -> click parent -> click child -> click create
+
+4. Edit your model
+- Tip: If you make a mistake, click the undo button on the toolbar to undo the last action.
+- Tip: All measurements are in meters.
+
+4.1. Edit links
+- The model editor supports editing properties of a link which you would also find in its SDF.
+- To edit a link's properties: 
+	- Double-click on the link 
+	- or right click and 
+		- select Open Link Inspector. 
+	- A dialog window will appear which contains Link, Visual, and Collision property tabs.
+
+- As an example, try changing the link pose and visual colors. 
+- Once you are done, click on OK to close the inspector.
+
+4.2. Edit joints
+- As mentioned earlier, joint properties can also be edited. 
+- These are properties that you would find in the joint SDF.
+
+- To edit a joint:
+	- Double-click on the line connecting the links 
+	- or right click on it and
+		- select Open Joint Inspector.
+		- The joint inspector will appear.
+
+- As an example, try changing the joint pose and joint type. 
+- Once you are done, click on OK to close the inspector.
+
+4.3. Saving your model
+- Saving will create
+	- a directory,
+	- SDF and
+	- config files for your model.
+
+- As an exercise, let's build a simple car and save it. 
+- The car will have a box chassis and four cylinder wheels. 
+	- Each wheel will be connected to the chassis with a revolute joint
+
+- Once you're happy with the model you created, 
+	- go to the Model tab in the left panel and
+	- give it a name.
+
+- To save the model, 
+	- choose File, then Save As (or hit Ctrl+S) in the top menu.
+	- A dialog will come up where you can choose the location for your model.
+
+4.4. Exit
+- When you're done creating the model and you've saved it, 
+- go to File and then 
+- Exit Model Editor.
+- Your model will show up in the main window.
+
+4.5. Edit existing models
+- Rather than creating a model from the ground up; 
+- you can also edit existing models that are already in the simulation.
+
+- To edit an existing model:
+	- Make sure you have saved the model you created, 
+	- and you have exited the model editor.
+	- Alternatively, start from a fresh Gazebo instance.
+
+    - Insert a model from the Insert tab on the left. 
+    	- For example, let's insert a Simple Arm.
+
+    - Right click on the model you just inserted and select Edit Model.
+
+- Now you are in the model editor 
+- and you are free to add new links to the model 
+- or edit existing ones
+
+-------------------------------------------------------
+
+2.) Extrude SVG files
+
+- This tutorial describes the process of extruding SVG files,
+	- which are 2D images, 
+	- to create 3D meshes for your models in Gazebo.
+
+- It is sometimes easier to design part of a model in a program like Inkscape or Illustrator.
+
+- This tutorial will show you how to make a custom wheel as an .svg in Inkscape, 
+- and import it into Gazebo so that it can be attached to a robot.
+
+1. Document preparation
+- Start Inkscape. 
+	- This will create a blank document. 
+
+1.1. First, lets change the document size to better accommodate our wheel: 
+	- under the File->Document properties menu, 
+		- select the Page tab
+		- and change the document size to a custom size
+			- of 100.0 x 100.0 mm.
+
+	Then, in the same dialog, 
+		-select the Grids tab, 
+			- press the New button to create a custom grid. 
+			- Then, check 
+				- the Enabled,
+				- Visible,
+				- and Snap to visible grid lines only options.
+			- Change Spacing X and Spacing Y to be 10.
+
+- You should end up with a document looking like this:
+	- a square one a white background
+
+2. Draw
+- You can use the different tools (pen, text, stars and shapes, etc.) to create your geometry. 
+- In this example, the wheel is made from circles 
+	- (pressing the Shift Key you can start your circle from the center, 
+	- and using the CTRL key allows you to keep the roundness of the shape). 
+	- It is possible to combine shapes together,
+	- making sure that paths are closed and that the part has a proper thickness.
+
+- Note: a stick figure or two circles that touch each other would not result in valid Gazebo models. 
+- The SVG paths must create an closed contour with holes, 
+	- ** where the holes cannot touch the contour or other holes.
+	- Holes inside holes are treated as solid parts
+		- (and they can have holes, too).
+
+- Gazebo only imports paths, 
+- but it's easy with Inkscape to transform any shape to a path.
+	- Select Select All from the Edit menu.
+	- Then select the Path -> Object to Path menu item. 
+	- This will transform every object into separate paths and sub paths.
+	- *** This transformation is irreversible,
+	- so if you transform text into paths, you will not be able to alter the text.
+
+- Gazebo does not support grouping. Use the Ungroup from the Object menu to separate groups of paths.
+
+3. Saving your drawing
+- Save your drawing to an SVG file you can use later in Gazebo. 
+- Use the Save option from the File menu.
+
+4. Create a Gazebo Model
+- SDFormat does not support SVG directly; 
+	- it supports 2D poly lines. 
+	- The Gazebo Model Editor has an import mechanism that extracts the poly lines from SVG files, 
+	- and saves them as an SDF model file.
+
+- Launch Gazebo 
+	- and Select Model Editor from the Edit menu to enter the Gazebo Model Editor mode (as opposed to the simulation mode).
+		- Then press the Add button in the Custom Shapes section of the Insert tab.
+			- This will open the Import Link dialog from where you can select the SVG file by pressing the Browse button.
+			- Once the file has been selected, 
+				- press the Import button to open the Extrude Link dialog
+				- The dialog allows you to set parameters of the extrusions:
+    				- Thickness: How thick the link will be. 
+    					- This corresponds to the extrusion height in the z axis. 
+    					- For the SVG path shown on the right, 
+    					- the axis of extrusion is outwards from the screen.
+
+    				- Resolution: How many pixels in your SVG correspond to a meter. 
+    					- The default value (3543.3 px/m) 
+    					- corresponds to 90 dpi (dots per inch), 
+    					- which is the default resolution for several editors, including Inkscape. 
+    					- If your model shows up the size you'd like in Inkscape when you display the units as meters,
+    					- you shouldn't change the resolution value.
+
+    				- Samples per segment: This indicates into how many segments to divide each of the curved paths in the SVG. 
+    					- The more segments, the more complex your link will be. 
+    					- It doesn't change anything for straight paths.
+
+- On the right, you can see the path extracted from your SVG. 
+- The red points are the summit of the triangulation of the extruded 3D model.
+
+- Set the thickness of the wheel to 0.025 m, 
+- and press OK. 
+- Your new link should appear in the 3D view.
+
+- A new link is created, 
+- and it comes with a default collision shape 
+	- that is a copy of the generated 3D mesh.
+
+- Next, select Exit Model Editor from the File menu. 
+- Gazebo will prompt you to save the new model to disk. 
+- Press the Save and Exit button on the Exit dialog, 
+- and the Save Model dialog will appear.
+
+- Set the name of the new model to "HollowWheel", 
+- and fill in the information under the Advanced Options section. 
+- Press the Save button.
+
+==================================================================
